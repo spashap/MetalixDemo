@@ -636,6 +636,8 @@ const zh: Dict = {
   footer: {
     line: "钣金智能工厂数字化解决方案",
     demo: "Metalix《钣金智能工厂》宣传册互动版。",
+    views: "浏览量",
+    unique: "独立访客",
   },
 };
 

@@ -649,6 +649,8 @@ const de: Dict = {
   footer: {
     line: "Digitale Lösungen für die smarte Blechfabrik",
     demo: "Interaktive Ausgabe der Metalix-Broschüre „Smarte Blechfabrik“.",
+    views: "Aufrufe",
+    unique: "Eindeutige Besucher",
   },
 };
 

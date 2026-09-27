@@ -409,6 +409,36 @@ function Explore({ onClose }: { onClose: () => void }) {
   );
 }
 
+type Views = { total: number; unique: number };
+// One POST per page load, shared across re-mounts (and React's dev double effect).
+let viewsOnce: Promise<Views | null> | null = null;
+function loadViews() {
+  viewsOnce ??= fetch("/api/views", { method: "POST" })
+    .then((r) => (r.status === 200 ? (r.json() as Promise<Views>) : null))
+    .catch(() => null);
+  return viewsOnce;
+}
+
+function ViewCount() {
+  const { t, lang } = useI18n();
+  const [views, setViews] = useState<Views | null>(null);
+  useEffect(() => {
+    loadViews().then(setViews);
+  }, []);
+  if (!views) return null;
+  const n = new Intl.NumberFormat(localeInfo[lang].hreflang);
+  return (
+    <div className="foot__views">
+      <span>
+        {t.footer.views} <b>{n.format(views.total)}</b>
+      </span>
+      <span>
+        {t.footer.unique} <b>{n.format(views.unique)}</b>
+      </span>
+    </div>
+  );
+}
+
 export function Footer() {
   const { t, lang, setLang } = useI18n();
   const { go } = useNav();
@@ -436,6 +466,7 @@ export function Footer() {
             {t.ui.backToTop} ↑
           </a>
         </div>
+        <ViewCount />
       </div>
     </footer>
   );

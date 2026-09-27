@@ -649,6 +649,8 @@ const fr: Dict = {
   footer: {
     line: "Solutions numériques pour l’usine de tôlerie intelligente",
     demo: "Édition interactive de la brochure Metalix « Usine de tôlerie intelligente ».",
+    views: "Vues",
+    unique: "Visiteurs uniques",
   },
 };
 

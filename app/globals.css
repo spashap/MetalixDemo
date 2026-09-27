@@ -695,6 +695,8 @@ html[lang="zh-Hans"] .hero h1 { letter-spacing: 0.01em; line-height: 1.15; }
 .foot .brandline { display: flex; align-items: center; gap: 14px; }
 .foot b { color: #fff; font-size: 20px; letter-spacing: 0.02em; }
 .foot .langs { display: flex; gap: 6px; }
+.foot__views { flex-basis: 100%; display: flex; gap: 22px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; color: #6f717a; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 16px; }
+.foot .foot__views b { font-size: inherit; color: #c9cacf; font-variant-numeric: tabular-nums; margin-left: 4px; }
 .foot .langs button { border: 1px solid rgba(255, 255, 255, 0.14); background: none; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 13px; color: #c9cacf; }
 .foot .langs button[aria-pressed="true"] { border-color: var(--red-2); color: #fff; background: rgba(209, 35, 41, 0.15); }
 

@@ -651,6 +651,8 @@ const en = {
   footer: {
     line: "Digital Solutions for the Smart Sheet Metal Factory",
     demo: "Interactive edition of the Metalix Smart Sheet Metal Factory brochure.",
+    views: "Views",
+    unique: "Unique visitors",
   },
 };
 

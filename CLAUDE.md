@@ -84,6 +84,15 @@ contour, then a small overcut and **lead-out** back into the scrap. Pierce flash
 - A YouTube embed opened top-level shows "configuration error" — it needs a host page; not a bug.
 - To inspect a finished demo state, force it with injected CSS (e.g. `.toolpath .hit{opacity:1}`).
 
+## View counter (footer)
+
+`app/api/views/route.ts` — one POST per page load (language switch doesn't count). Upstash Redis
+store `metalix-views` (Vercel Marketplace, free plan, env `KV_REST_API_*`; `vercel env pull` for
+local). `views:total` = INCR every load; `views:visitors` = set of `vid` cookie ids (2-year cookie),
+SCARD = unique. Bot user-agents are not counted. No env vars → 204 → footer shows nothing.
+**Local testing writes to the production counters** — reset afterwards with
+`DEL views:total views:visitors` (Upstash REST: POST `["DEL",…]` with `KV_REST_API_TOKEN`).
+
 ## Open items
 
 - German/French/Chinese written by Claude — industry terms need a native Metalix reviewer.
