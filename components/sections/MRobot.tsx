@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useI18n } from "../i18n";
 import { CapTabs, Icon, SectionHead, reducedMotion, useVisible } from "../ui";
 
@@ -8,10 +8,13 @@ const VIDEO = "irELBj5UiWE";
 const VIDEO_TITLE = "MRobot EPTA Robotic Bending Simulation";
 
 export default function MRobot() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const r = t.mrobot;
   const [i, setI] = useState(0);
-  const [playing, setPlaying] = useState(false);
+  // "auto": started muted by scrolling into view (browsers only allow muted autoplay).
+  // "click": started by the play button, so sound is allowed.
+  const [playing, setPlaying] = useState<false | "auto" | "click">(false);
+  const player = useRef<HTMLIFrameElement>(null);
   const [ref, visible] = useVisible<HTMLDivElement>();
 
   useEffect(() => {
@@ -19,6 +22,19 @@ export default function MRobot() {
     const id = window.setTimeout(() => setI((v) => (v + 1) % r.steps.length), 3800);
     return () => window.clearTimeout(id);
   }, [i, visible, r.steps.length]);
+
+  useEffect(() => {
+    if (visible && !playing && !reducedMotion()) setPlaying("auto");
+  }, [visible, playing]);
+
+  // Pause off-screen, resume on return (YouTube iframe API via postMessage).
+  useEffect(() => {
+    if (!playing) return;
+    player.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: "command", func: visible ? "playVideo" : "pauseVideo", args: [] }),
+      "*",
+    );
+  }, [visible, playing]);
 
   return (
     <section id="mrobot" className="sec theme-dark">
@@ -32,7 +48,8 @@ export default function MRobot() {
           <figure className={`media robot__video${playing ? " is-playing" : ""}`} style={{ margin: 0 }}>
             {playing ? (
               <iframe
-                src={`https://www.youtube-nocookie.com/embed/${VIDEO}?autoplay=1&rel=0&modestbranding=1&hl=${lang}`}
+                ref={player}
+                src={`https://www.youtube-nocookie.com/embed/${VIDEO}?autoplay=1&mute=${playing === "auto" ? 1 : 0}&loop=1&playlist=${VIDEO}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
                 title={VIDEO_TITLE}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 referrerPolicy="strict-origin-when-cross-origin"
@@ -40,7 +57,7 @@ export default function MRobot() {
               />
             ) : (
               // Thumbnail only: the YouTube player (and its cookies) load when the visitor asks for it.
-              <button className="robot__poster" onClick={() => setPlaying(true)} aria-label={`${t.ui.play}: ${VIDEO_TITLE}`}>
+              <button className="robot__poster" onClick={() => setPlaying("click")} aria-label={`${t.ui.play}: ${VIDEO_TITLE}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/img/mrobot.webp" alt="" loading="lazy" />
                 <span className="scan" />
