@@ -2,12 +2,16 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { useI18n } from "../i18n";
-import { CapTabs, SectionHead, reducedMotion, useVisible } from "../ui";
+import { CapTabs, Icon, SectionHead, reducedMotion, useVisible } from "../ui";
+
+const VIDEO = "irELBj5UiWE";
+const VIDEO_TITLE = "MRobot EPTA Robotic Bending Simulation";
 
 export default function MRobot() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const r = t.mrobot;
   const [i, setI] = useState(0);
+  const [playing, setPlaying] = useState(false);
   const [ref, visible] = useVisible<HTMLDivElement>();
 
   useEffect(() => {
@@ -25,16 +29,36 @@ export default function MRobot() {
           {r.stepsTitle}
         </h3>
         <div className="robot" ref={ref} data-reveal>
-          <figure className="media" style={{ margin: 0 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/img/mrobot.webp" alt={r.title} loading="lazy" />
-            <span className="scan" />
-            <div className="robot__hud" aria-hidden="true">
-              <span className="mono">CELL · SIM</span>
-              <span className="mono">
-                {String(i + 1).padStart(2, "0")} / {String(r.steps.length).padStart(2, "0")}
-              </span>
-            </div>
+          <figure className={`media robot__video${playing ? " is-playing" : ""}`} style={{ margin: 0 }}>
+            {playing ? (
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${VIDEO}?autoplay=1&rel=0&modestbranding=1&hl=${lang}`}
+                title={VIDEO_TITLE}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            ) : (
+              // Thumbnail only: the YouTube player (and its cookies) load when the visitor asks for it.
+              <button className="robot__poster" onClick={() => setPlaying(true)} aria-label={`${t.ui.play}: ${VIDEO_TITLE}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/img/mrobot.webp" alt="" loading="lazy" />
+                <span className="scan" />
+                <span className="robot__play" aria-hidden="true">
+                  <Icon name="play" />
+                </span>
+                <span className="robot__caption">
+                  <span className="mono">▶ YouTube</span>
+                  {VIDEO_TITLE}
+                </span>
+                <span className="robot__hud" aria-hidden="true">
+                  <span className="mono">CELL · SIM</span>
+                  <span className="mono">
+                    {String(i + 1).padStart(2, "0")} / {String(r.steps.length).padStart(2, "0")}
+                  </span>
+                </span>
+              </button>
+            )}
           </figure>
           <ol className="robot__steps">
             {r.steps.map((s, k) => (
