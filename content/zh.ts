@@ -206,6 +206,8 @@ const zh: Dict = {
       laser: "激光",
       punch: "冲压",
       readout: ["轮廓", "冲次", "引入线"],
+      tool: "模具",
+      tools: ["圆形 Ø14", "方形 14", "矩形 30×8"],
     },
   },
   mbend: {

@@ -211,6 +211,8 @@ const fr: Dict = {
       laser: "Laser",
       punch: "Poinçon",
       readout: ["Contour", "Frappes", "Amorce"],
+      tool: "Outil",
+      tools: ["Rond Ø14", "Carré 14", "Rectangulaire 30×8"],
     },
   },
   mbend: {

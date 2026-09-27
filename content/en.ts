@@ -213,6 +213,8 @@ const en = {
       laser: "Laser",
       punch: "Punch",
       readout: ["Contour", "Hits", "Lead-in"],
+      tool: "Tool",
+      tools: ["Round Ø14", "Square 14", "Rectangular 30×8"],
     },
   },
   mbend: {

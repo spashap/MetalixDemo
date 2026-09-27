@@ -549,7 +549,11 @@ html[lang="zh-Hans"] .hero h1 { letter-spacing: 0.01em; line-height: 1.15; }
 .toolpath .part { fill: rgba(255, 255, 255, 0.03); stroke: rgba(255, 255, 255, 0.25); stroke-width: 1.2; }
 .toolpath .cut { fill: none; stroke: var(--hot); stroke-width: 2.2; filter: drop-shadow(0 0 4px rgba(255, 140, 40, 0.9)); }
 .toolpath .cut.cool { stroke: var(--blue); filter: none; opacity: 0.85; transition: stroke 1.5s, opacity 1.5s; }
-.toolpath .hit { fill: var(--salmon); }
+.toolpath .hit { fill: rgba(255, 212, 0, 0.42); stroke: #ffd400; stroke-width: 1; opacity: 0; transition: opacity 0.15s, fill 0.6s; }
+.toolpath .hit.on { opacity: 1; }
+.toolpath .hit.cur { fill: #fff6b0; stroke: #fff; filter: drop-shadow(0 0 6px rgba(255, 212, 0, 0.9)); }
+.toolpath .tool { fill: none; stroke: #fff; stroke-width: 1.5; stroke-dasharray: 3 2; }
+.toolpath .tool-name { color: #ffd400; }
 .toolpath .rapid { stroke: rgba(255, 255, 255, 0.28); stroke-dasharray: 3 5; fill: none; }
 
 /* ───────────── Bend 3D ───────────── */
