@@ -172,7 +172,6 @@ export default function HeroCanvas({ onStats, running }: { onStats: (s: HeroStat
     window.addEventListener("resize", resize);
 
     let parts = layout();
-    let mode: "laser" | "punch" = "laser";
     let phase: HeroStats["phase"] = 0;
     let phaseStart = performance.now();
     let pi = 0;
@@ -183,7 +182,6 @@ export default function HeroCanvas({ onStats, running }: { onStats: (s: HeroStat
     let rapidFrom: Pt | null = null;
     let rapidT = 0;
     const sparks: { x: number; y: number; vx: number; vy: number; life: number }[] = [];
-    const hits: Pt[] = [];
     let last = performance.now();
     let raf = 0;
     let lastStats = 0;
@@ -205,8 +203,8 @@ export default function HeroCanvas({ onStats, running }: { onStats: (s: HeroStat
       const pt = (now - phaseStart) / 1000;
 
       // ── simulation ──
-      if (phase === 0 && pt > 1.4) setPhase(mode === "laser" ? 1 : 2);
-      if ((phase === 1 || phase === 2) && pi < parts.length) {
+      if (phase === 0 && pt > 1.4) setPhase(1);
+      if (phase === 1 && pi < parts.length) {
         const part = parts[pi];
         const c = part.contours[ci];
         if (rapidFrom) {
@@ -216,18 +214,13 @@ export default function HeroCanvas({ onStats, running }: { onStats: (s: HeroStat
           head = [rapidFrom[0] + (c.pts[0][0] - rapidFrom[0]) * e, rapidFrom[1] + (c.pts[0][1] - rapidFrom[1]) * e];
           if (t >= 1) rapidFrom = null;
         } else {
-          const step = speed * dt * (mode === "punch" ? 1.4 : 1);
+          const step = speed * dt;
           const before = dist;
           dist = Math.min(c.len, dist + step);
           cutTotal += dist - before;
           head = pointAt(c, dist);
-          if (mode === "punch") {
-            const pitch = 16;
-            for (let d = Math.ceil(before / pitch) * pitch; d <= dist; d += pitch) hits.push(pointAt(c, d));
-          } else {
-            for (let k = 0; k < 3; k++)
-              sparks.push({ x: head[0], y: head[1], vx: (Math.random() - 0.5) * 260, vy: (Math.random() - 0.3) * 260, life: 1 });
-          }
+          for (let k = 0; k < 3; k++)
+            sparks.push({ x: head[0], y: head[1], vx: (Math.random() - 0.5) * 260, vy: (Math.random() - 0.3) * 260, life: 1 });
           if (dist >= c.len) {
             dist = 0;
             ci++;
@@ -247,10 +240,8 @@ export default function HeroCanvas({ onStats, running }: { onStats: (s: HeroStat
       }
       if (phase === 3 && pt > 2.2) {
         parts = layout();
-        mode = mode === "laser" ? "punch" : "laser";
         pi = ci = 0;
         dist = 0;
-        hits.length = 0;
         rapidFrom = head;
         rapidT = 0;
         setPhase(0);
@@ -292,7 +283,7 @@ export default function HeroCanvas({ onStats, running }: { onStats: (s: HeroStat
           ctx.fill("evenodd");
         }
         p.contours.forEach((c, k) => {
-          const isCur = idx === pi && k === ci && (phase === 1 || phase === 2) && !rapidFrom;
+          const isCur = idx === pi && k === ci && phase === 1 && !rapidFrom;
           const cut = p.done || idx < pi || (idx === pi && k < ci);
           ctx.beginPath();
           c.pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
@@ -307,7 +298,7 @@ export default function HeroCanvas({ onStats, running }: { onStats: (s: HeroStat
           }
           ctx.stroke();
           ctx.setLineDash([]);
-          if (isCur && mode === "laser") {
+          if (isCur) {
             tracePartial(ctx, c, dist);
             ctx.strokeStyle = "#ffb347";
             ctx.lineWidth = 2.6;
@@ -320,14 +311,8 @@ export default function HeroCanvas({ onStats, running }: { onStats: (s: HeroStat
         ctx.restore();
       });
 
-      // punch hits
-      if (hits.length && phase !== 3) {
-        ctx.fillStyle = "rgba(255,143,134,0.9)";
-        hits.forEach(([x, y]) => ctx.fillRect(x - 4, y - 4, 8, 8));
-      }
-
       // rapid traverse
-      if (rapidFrom && (phase === 1 || phase === 2) && pi < parts.length) {
+      if (rapidFrom && phase === 1 && pi < parts.length) {
         const target = parts[pi].contours[ci].pts[0];
         ctx.strokeStyle = "rgba(30,167,232,0.5)";
         ctx.setLineDash([3, 6]);
@@ -359,27 +344,23 @@ export default function HeroCanvas({ onStats, running }: { onStats: (s: HeroStat
       }
 
       // head
-      if (phase === 1 || phase === 2) {
+      if (phase === 1) {
         const [hx, hy] = head;
-        const g = ctx.createRadialGradient(hx, hy, 0, hx, hy, mode === "laser" ? 46 : 30);
-        g.addColorStop(0, mode === "laser" ? "rgba(255,255,255,1)" : "rgba(255,200,200,0.9)");
-        g.addColorStop(0.15, mode === "laser" ? "rgba(255,170,80,0.9)" : "rgba(209,35,41,0.7)");
+        const g = ctx.createRadialGradient(hx, hy, 0, hx, hy, 46);
+        g.addColorStop(0, "rgba(255,255,255,1)");
+        g.addColorStop(0.15, "rgba(255,170,80,0.9)");
         g.addColorStop(1, "rgba(255,80,20,0)");
         ctx.fillStyle = g;
         ctx.beginPath();
         ctx.arc(hx, hy, 46, 0, Math.PI * 2);
         ctx.fill();
-        if (mode === "punch") {
-          ctx.strokeStyle = "rgba(255,255,255,0.8)";
-          ctx.strokeRect(hx - 9, hy - 9, 18, 18);
-        }
       }
       ctx.globalCompositeOperation = "source-over";
 
       if (now - lastStats > 120) {
         lastStats = now;
         statsCb.current({
-          phase: phase === 0 ? 0 : phase === 1 ? 1 : phase === 2 ? 2 : 3,
+          phase,
           parts: parts.filter((p) => p.done).length,
           length: cutTotal / 1000,
         });

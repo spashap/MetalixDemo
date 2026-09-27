@@ -88,12 +88,15 @@ export default function Hero() {
         {t.ui.scroll}
       </div>
       <div className="hero__hud" aria-hidden="true">
-        {t.hero.hud.map((h, i) => (
-          <div key={h} className={i === hudPhase ? "on" : ""}>
-            {h}
-            <b>{i === hudPhase ? "●" : "○"}</b>
-          </div>
-        ))}
+        {/* The hero is laser-only, so the Punching stage (index 2) is never shown */}
+        {t.hero.hud.map((h, i) =>
+          i === 2 ? null : (
+            <div key={h} className={i === hudPhase ? "on" : ""}>
+              {h}
+              <b>{i === hudPhase ? "●" : "○"}</b>
+            </div>
+          ),
+        )}
         <div>
           Parts
           <b>{String(stats.parts).padStart(2, "0")}</b>
