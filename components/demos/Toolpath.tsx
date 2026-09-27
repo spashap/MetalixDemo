@@ -33,8 +33,52 @@ const circlePath = ({ cx, cy, r }: (typeof ROUND)[number]) =>
 const rectPath = ({ x, y, w, h }: (typeof RECTS)[number]) => `M${x} ${y} h${w} v${h} h${-w} z`;
 const outerPath = `M${OUTER.map((p) => p.join(" ")).join(" L")} Z`;
 
-// Laser: holes, then the outer contour
+// Part outline (for the filled part shape)
 const CONTOURS = [...ROUND.map(circlePath), ...RECTS.map(rectPath), outerPath];
+
+// ── Laser strategy ─────────────────────────────────────────────────────────
+// The pierce splashes and burns, so it always happens in the scrap: inside a
+// hole, outside the outer contour. A short lead-in (arc or straight) brings the
+// beam onto the contour; a small overcut and lead-out take it off again.
+type LaserFeature = { d: string; pierce: Pt; lead: 0 | 1 }; // lead: 0 arc · 1 straight
+const rad = (deg: number) => (deg * Math.PI) / 180;
+const LASER: LaserFeature[] = [
+  ...ROUND.map(({ cx, cy, r }): LaserFeature => {
+    const over: Pt = [cx + r * Math.cos(rad(12)), cy + r * Math.sin(rad(12))];
+    const exit: Pt = [cx + (r - 8) * Math.cos(rad(40)), cy + (r - 8) * Math.sin(rad(40))];
+    return {
+      pierce: [cx, cy],
+      lead: 0,
+      d:
+        `M${cx} ${cy} A${r / 2} ${r / 2} 0 0 1 ${cx + r} ${cy}` + // arc lead-in from the centre
+        ` A${r} ${r} 0 1 1 ${cx - r} ${cy} A${r} ${r} 0 1 1 ${cx + r} ${cy}` + // full circle
+        ` A${r} ${r} 0 0 1 ${over[0]} ${over[1]} L${exit[0]} ${exit[1]}`, // overcut + lead-out
+    };
+  }),
+  (() => {
+    const { x, y, w, h } = RECTS[0];
+    const m = y + h / 2;
+    return {
+      pierce: [x + 12, m + 12] as Pt,
+      lead: 0 as const,
+      d: `M${x + 12} ${m + 12} A12 12 0 0 1 ${x} ${m} L${x} ${y} L${x + w} ${y} L${x + w} ${y + h} L${x} ${y + h} L${x} ${m} L${x} ${m - 5} L${x + 9} ${m - 12}`,
+    };
+  })(),
+  (() => {
+    const { x, y, w, h } = RECTS[1];
+    const m = y + h / 2;
+    return {
+      pierce: [x + 14, m] as Pt,
+      lead: 1 as const,
+      d: `M${x + 14} ${m} L${x} ${m} L${x} ${y} L${x + w} ${y} L${x + w} ${y + h} L${x} ${y + h} L${x} ${m} L${x} ${m - 5} L${x + 9} ${m - 9}`,
+    };
+  })(),
+  {
+    pierce: [380, 60],
+    lead: 0,
+    d: `M380 60 A20 20 0 0 0 400 80 L${OUTER.slice(1).map((p) => p.join(" ")).join(" L")} L100 80 L400 80 L406 80 A12 12 0 0 0 418 68`,
+  },
+];
 
 // ── Punch strategy ─────────────────────────────────────────────────────────
 // Tools: round Ø14, square 14, rectangular 30 × 8. Every hit overlaps the last.
@@ -118,16 +162,17 @@ function buildHits(): Hit[] {
   return hits;
 }
 const HITS = buildHits();
-const FEATURES = ROUND.length + RECTS.length + 1;
+const FEATURES = ROUND.length + RECTS.length + 1; // same count for laser and punch
 
 export default function Toolpath() {
   const { t } = useI18n();
   const d = t.cnckad.demo;
   const [mode, setMode] = useState<"laser" | "punch">("punch");
   const [playing, setPlaying] = useState(true);
-  const [readout, setReadout] = useState({ c: 0, hits: 0, tool: 0 as Tool });
+  const [readout, setReadout] = useState({ c: 0, hits: 0, tool: 0 as Tool, lead: 0 as 0 | 1 });
   const [wrap, visible] = useVisible<HTMLDivElement>();
   const paths = useRef<(SVGPathElement | null)[]>([]);
+  const pierces = useRef<(SVGGElement | null)[]>([]);
   const head = useRef<SVGGElement>(null);
   const hitsG = useRef<SVGGElement>(null);
   const toolShapes = useRef<(SVGElement | null)[]>([]);
@@ -149,6 +194,7 @@ export default function Toolpath() {
         p.style.strokeDashoffset = `${lens[i]}`;
         p.classList.remove("cool");
       });
+      pierces.current.forEach((g) => g?.classList.remove("on"));
     };
     reset();
     if (reducedMotion()) {
@@ -156,6 +202,7 @@ export default function Toolpath() {
         p.style.strokeDashoffset = "0";
         p.classList.add("cool");
       });
+      pierces.current.forEach((g) => g?.classList.add("on"));
       return;
     }
     const tick = (now: number) => {
@@ -168,21 +215,24 @@ export default function Toolpath() {
         if (pause <= 0) reset();
         return;
       }
-      dist = Math.min(total, dist + dt * 380);
+      dist = Math.min(total, dist + dt * 340);
       let acc = 0;
       let cur = 0;
       els.forEach((p, i) => {
         const local = Math.max(0, Math.min(lens[i], dist - acc));
         p.style.strokeDashoffset = `${lens[i] - local}`;
         if (local >= lens[i]) p.classList.add("cool");
-        if (dist > acc) cur = i;
+        if (dist > acc) {
+          cur = i;
+          pierces.current[i]?.classList.add("on"); // pierce flash, then a burn mark in the scrap
+        }
         acc += lens[i];
       });
       let start = 0;
       for (let i = 0; i < cur; i++) start += lens[i];
       const pt = els[cur].getPointAtLength(Math.min(lens[cur], dist - start));
       head.current?.setAttribute("transform", `translate(${pt.x} ${pt.y})`);
-      setReadout({ c: cur + 1, hits: 0, tool: 0 });
+      setReadout({ c: cur + 1, hits: 0, tool: 0, lead: LASER[cur].lead });
       if (dist >= total) pause = 1.8;
     };
     raf = requestAnimationFrame(tick);
@@ -236,7 +286,7 @@ export default function Toolpath() {
       if (n > 0) {
         showTool(n - 1);
         const h = HITS[n - 1];
-        setReadout({ c: h.feature + 1, hits: n, tool: h.tool });
+        setReadout({ c: h.feature + 1, hits: n, tool: h.tool, lead: 0 });
       }
       if (n >= HITS.length) {
         marks[n - 1]?.classList.remove("cur");
@@ -269,18 +319,36 @@ export default function Toolpath() {
         </defs>
         <rect width="800" height="400" fill="url(#tp-grid)" />
         <path d={CONTOURS.slice().reverse().join(" ")} className="part" fillRule="evenodd" />
-        {mode === "laser"
-          ? CONTOURS.map((c, i) => (
+        {mode === "laser" ? (
+          <>
+            {LASER.map((f, i) => (
+              <path key={`plan${i}`} d={f.d} className="plan" />
+            ))}
+            {LASER.map((f, i) => (
+              <g
+                key={`pierce${i}`}
+                className="pierce"
+                transform={`translate(${f.pierce[0]} ${f.pierce[1]})`}
+                ref={(el) => {
+                  pierces.current[i] = el;
+                }}
+              >
+                <circle className="flash" r="14" />
+                <circle className="burn" r="4" />
+              </g>
+            ))}
+            {LASER.map((f, i) => (
               <path
                 key={`c${i}`}
-                d={c}
+                d={f.d}
                 className="cut"
                 ref={(el) => {
                   paths.current[i] = el;
                 }}
               />
-            ))
-          : null}
+            ))}
+          </>
+        ) : null}
         {mode === "punch" ? (
           <g ref={hitsG}>
             {HITS.map((h, i) =>
@@ -362,7 +430,7 @@ export default function Toolpath() {
           ) : (
             <span>
               {d.readout[2]}
-              <b>{readout.c}</b>
+              <b>{d.leads[readout.lead]}</b>
             </span>
           )}
         </div>

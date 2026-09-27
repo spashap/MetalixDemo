@@ -212,6 +212,7 @@ const fr: Dict = {
       punch: "Poinçon",
       readout: ["Contour", "Frappes", "Amorce"],
       tool: "Outil",
+      leads: ["Arc", "Droite"],
       tools: ["Rond Ø14", "Carré 14", "Rectangulaire 30×8"],
     },
   },

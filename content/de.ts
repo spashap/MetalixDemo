@@ -212,6 +212,7 @@ const de: Dict = {
       punch: "Stanzen",
       readout: ["Kontur", "Hübe", "Anschnitt"],
       tool: "Werkzeug",
+      leads: ["Bogen", "Gerade"],
       tools: ["Rund Ø14", "Quadrat 14", "Rechteck 30×8"],
     },
   },

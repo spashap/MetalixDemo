@@ -214,6 +214,7 @@ const en = {
       punch: "Punch",
       readout: ["Contour", "Hits", "Lead-in"],
       tool: "Tool",
+      leads: ["Arc", "Straight"],
       tools: ["Round Ø14", "Square 14", "Rectangular 30×8"],
     },
   },

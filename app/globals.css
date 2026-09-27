@@ -554,6 +554,13 @@ html[lang="zh-Hans"] .hero h1 { letter-spacing: 0.01em; line-height: 1.15; }
 .toolpath .hit.cur { fill: #fff6b0; stroke: #fff; filter: drop-shadow(0 0 6px rgba(255, 212, 0, 0.9)); }
 .toolpath .tool { fill: none; stroke: #fff; stroke-width: 1.5; stroke-dasharray: 3 2; }
 .toolpath .tool-name { color: #ffd400; }
+.toolpath .plan { fill: none; stroke: rgba(30, 167, 232, 0.35); stroke-width: 1; stroke-dasharray: 3 4; }
+.toolpath .pierce { opacity: 0; }
+.toolpath .pierce.on { opacity: 1; }
+.toolpath .pierce .burn { fill: #3a1d0c; stroke: #ff8a2a; stroke-width: 1.2; filter: drop-shadow(0 0 3px rgba(255, 120, 30, 0.8)); }
+.toolpath .pierce .flash { fill: rgba(255, 200, 120, 0.9); transform-box: fill-box; transform-origin: center; opacity: 0; }
+.toolpath .pierce.on .flash { animation: pierce 0.7s var(--ease); }
+@keyframes pierce { 0% { opacity: 1; transform: scale(0.2); } 100% { opacity: 0; transform: scale(1.6); } }
 .toolpath .rapid { stroke: rgba(255, 255, 255, 0.28); stroke-dasharray: 3 5; fill: none; }
 
 /* ───────────── Bend 3D ───────────── */
